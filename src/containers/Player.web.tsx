@@ -224,6 +224,13 @@ const Player = memo(() => {
         if (query) {
           uri += `?${query}`;
         }
+        if (program.authHeaders) {
+          opts.push(
+            `http-header-fields="${Object.entries(program.authHeaders)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(",")}"`
+          );
+        }
         retryCount.current = 0;
         startSeconds.current = 0;
         mpvRef.current?.command("loadfile", uri, "replace", opts.join(","));

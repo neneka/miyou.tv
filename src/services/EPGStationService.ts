@@ -543,6 +543,10 @@ export default class EPGStationService extends BackendService {
       responseType: "json",
       ...config
     };
+    const authHeaders = this.getAuthHeaders();
+    if (authHeaders) {
+      conf.headers = Object.assign(conf.headers || {}, authHeaders)
+    }
     const key = `${conf.url}?${qs.stringify(conf.params)}?${qs.stringify(
       conf.data
     )}`;
