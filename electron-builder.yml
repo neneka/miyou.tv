@@ -10,9 +10,7 @@ files:
   - "dist/bundle.js"
   - "assets/splash_screen.png"
   - "!node_modules/**/*"
-extraResources:
-  - from: mpv/${os}-${arch}
-    to: mpv
+extraResources: ["mpv/**/*"]
 extraMetadata:
   author:
     name: "未来検索ブラジル"

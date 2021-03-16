@@ -22,11 +22,11 @@ copy_deps() {
 }
 
 set +x
-copy_deps /usr/local/lib/libmpv.1.dylib
+copy_deps /usr/local/Cellar/mpv/0.33.0_3/lib/libmpv.1.dylib
 set -x
 
 cp -a mpv/darwin-x64/mpvjs.node $mpv/mpvjs.dylib
 
 # See <https://github.com/Kagami/boram/issues/11>.
 install_name_tool -change /System/Library/Frameworks/CoreImage.framework/Versions/A/CoreImage /System/Library/Frameworks/QuartzCore.framework/Versions/A/Frameworks/CoreImage.framework/Versions/A/CoreImage $mpv/libavfilter.7.dylib
-install_name_tool -change /usr/local/opt/mpv/lib/libmpv.1.dylib '@loader_path/libmpv.1.dylib' $mpv/mpvjs.dylib
+install_name_tool -change /usr/local/Cellar/mpv/0.33.0_3/lib/libmpv.1.dylib '@loader_path/libmpv.1.dylib' $mpv/mpvjs.dylib

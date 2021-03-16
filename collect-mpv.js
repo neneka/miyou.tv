@@ -3,13 +3,13 @@ const fs = require("fs");
 const tar = require("tar");
 const { execSync } = require("child_process");
 
-const prebuildsDir = path.join(
-  path.dirname(require.resolve("mpv.js")),
-  "prebuilds"
-);
+const arg = process.argv[2];
+const prebuildsDir =
+  arg || path.join(path.dirname(require.resolve("mpv.js")), "prebuilds");
 const prebuilds = fs.readdirSync(prebuildsDir);
 
 for (const filename of prebuilds) {
+  if (filename.startsWith(".")) continue;
   const basename = path.basename(filename, ".tar.gz");
   const [platform, arch] = basename.split("-").slice(-2);
   const os = platform.replace("win32", "win");

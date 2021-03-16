@@ -351,9 +351,13 @@ try {
 let pluginPath = "";
 try {
   const fs = require("fs");
-  pluginPath = path.join(app.getAppPath(), "../mpv/mpvjs.node");
+  const parent =
+    process.env.NODE_ENV === "development"
+      ? app.getAppPath()
+      : path.join(app.getAppPath(), "..");
+  pluginPath = path.join(parent, "./mpv/mpvjs.node");
   if (!fs.existsSync(pluginPath)) {
-    pluginPath = path.join(app.getAppPath(), "../mpv/mpvjs.dylib");
+    pluginPath = path.join(parent, "./mpv/mac-x64/mpvjs.dylib");
   }
   if (!fs.existsSync(pluginPath)) {
     pluginPath = path.resolve(
