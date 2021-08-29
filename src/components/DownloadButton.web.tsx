@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -11,10 +11,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef
+} from "react";
 import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
-import { ipcRenderer, IpcRendererEvent } from "electron";
+import { IpcRendererEvent } from "electron";
 import { Progress } from "electron-dl";
+
+type DownloadStatus = "stopped" | "started" | "wait" | "success" | "failure";
 
 type Props = {
   title: string;
@@ -55,9 +63,9 @@ const DownloadButton = ({
   onSuccess,
   onFailure
 }: Props) => {
-  const [status, setStatus] = useState<
-    "stopped" | "started" | "wait" | "success" | "failure"
-  >("stopped");
+  const statusRef = useRef<DownloadStatus>("stopped");
+
+  const [status, setStatus] = useState<DownloadStatus>("stopped");
   const [progress, setProgress] = useState<Progress>();
 
   const total = useMemo(() => {
@@ -91,66 +99,74 @@ const DownloadButton = ({
 
   useEffect(() => {
     const onDownloadStarted = () => {
-      if (status === "stopped") {
-        setStatus("wait");
+      if (statusRef.current === "stopped") {
+        statusRef.current = "wait";
+        setStatus(statusRef.current);
       }
     };
     const onDownloadCancel = () => {
-      if (status === "wait" || status === "started") {
-        setStatus("stopped");
+      if (statusRef.current === "wait" || statusRef.current === "started") {
+        statusRef.current = "stopped";
+        setStatus(statusRef.current);
       }
     };
     const onDownloadProgress = (
       event: IpcRendererEvent,
       progress: Progress
     ) => {
-      if (status === "started") {
+      if (statusRef.current === "started") {
         setProgress(progress);
-      } else if (status === "stopped") {
-        setStatus("wait");
+      } else if (statusRef.current === "stopped") {
+        statusRef.current = "wait";
+        setStatus(statusRef.current);
       }
     };
     const onDownloadSuccess = () => {
-      if (status === "wait") {
-        setStatus("stopped");
-      } else if (status === "started") {
+      if (statusRef.current === "wait") {
+        statusRef.current = "stopped";
+        setStatus(statusRef.current);
+      } else if (statusRef.current === "started") {
         if (onSuccess) {
           onSuccess();
         }
-        setStatus("success");
+        statusRef.current = "success";
+        setStatus(statusRef.current);
       }
     };
     const onDownloadFailute = (event: IpcRendererEvent, e: any) => {
-      if (status === "wait") {
-        setStatus("stopped");
-      } else if (status === "started") {
+      if (statusRef.current === "wait") {
+        statusRef.current = "stopped";
+        setStatus(statusRef.current);
+      } else if (statusRef.current === "started") {
         if (onFailure) {
           onFailure(e);
         }
-        setStatus("failure");
+        statusRef.current = "failure";
+        setStatus(statusRef.current);
       }
     };
-    ipcRenderer.on("download-started", onDownloadStarted);
-    ipcRenderer.on("download-cancel", onDownloadCancel);
-    ipcRenderer.on("download-progress", onDownloadProgress);
-    ipcRenderer.on("download-success", onDownloadSuccess);
-    ipcRenderer.on("download-failure", onDownloadFailute);
+    window.download.on("started", onDownloadStarted);
+    window.download.on("cancel", onDownloadCancel);
+    window.download.on("progress", onDownloadProgress);
+    window.download.on("success", onDownloadSuccess);
+    window.download.on("failure", onDownloadFailute);
     return () => {
-      ipcRenderer.off("download-started", onDownloadStarted);
-      ipcRenderer.off("download-cancel", onDownloadCancel);
-      ipcRenderer.off("download-progress", onDownloadProgress);
-      ipcRenderer.off("download-success", onDownloadSuccess);
-      ipcRenderer.off("download-failure", onDownloadFailute);
+      window.download.off("started", onDownloadStarted);
+      window.download.off("cancel", onDownloadCancel);
+      window.download.off("progress", onDownloadProgress);
+      window.download.off("success", onDownloadSuccess);
+      window.download.off("failure", onDownloadFailute);
     };
-  }, [status]);
+  }, []);
 
   const onPress = useCallback(() => {
     const { uri, filename } = source;
-    setStatus("started");
-    ipcRenderer.send("download-request", { filename, url: uri });
+    statusRef.current = "started";
+    setStatus(statusRef.current);
+    window.download.request(uri, filename);
   }, [source]);
   const onCancelPress = useCallback(() => {
-    ipcRenderer.send("download-abort");
+    window.download.abort();
   }, []);
 
   switch (status) {

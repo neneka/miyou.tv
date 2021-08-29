@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,7 +14,6 @@ limitations under the License.
 import { all, put, select, takeLatest, throttle } from "redux-saga/effects";
 import { AnyAction } from "redux";
 import Toast from "react-native-root-toast";
-import { remote } from "electron";
 
 import {
   COMMENT_PLAYER_INIT,
@@ -26,27 +25,9 @@ import {
 import { requestIntervals, requestComments } from "./service";
 import { toastOptions } from "../../config/constants";
 
-function getViewerView() {
-  const win = remote.getCurrentWindow();
-  const viewerView = win.getBrowserView();
-  return viewerView;
-}
-
-function getViewerWindow() {
-  const [viewerWindow = null] = remote.BrowserWindow.getAllWindows()
-    .sort(({ id: a }, { id: b }) => a - b)
-    .slice(1)
-    .filter(({ isDestroyed }) => !isDestroyed());
-  return viewerWindow;
-}
-
 function dispatchMain(action: AnyAction) {
   try {
-    const [win] = remote.BrowserWindow.getAllWindows().sort(
-      ({ id: a }, { id: b }) => a - b
-    );
-    const data = JSON.stringify(action);
-    win.webContents.send("dispatch", data);
+    window.ipc.dispatchMain(action);
   } catch (e) {
     Toast.show(e.message || JSON.stringify(e, null, 2), {
       ...toastOptions,
@@ -57,15 +38,8 @@ function dispatchMain(action: AnyAction) {
 
 function dispatchViewer(action: AnyAction) {
   try {
-    const data = JSON.stringify(action);
-    const viewerView = getViewerView();
-    const viewerWindow = getViewerWindow();
-    if (viewerView) {
-      viewerView.webContents.send("dispatch", data);
-    }
-    if (viewerWindow) {
-      viewerWindow.webContents.send("dispatch", data);
-    }
+    window.ipc.dispatchView(action);
+    window.ipc.dispatchChild(action);
   } catch (e) {
     Toast.show(e.message || JSON.stringify(e, null, 2), {
       ...toastOptions,

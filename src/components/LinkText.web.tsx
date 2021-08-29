@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,7 +14,6 @@ limitations under the License.
 import React, { useCallback, PropsWithChildren, useContext } from "react";
 import { TouchableOpacity, StyleProp, ViewStyle } from "react-native";
 import { Text, TextProps, ThemeContext } from "react-native-elements";
-import { remote } from "electron";
 
 type Props = PropsWithChildren<
   {
@@ -33,7 +32,7 @@ const LinkText = ({
   const { theme } = useContext(ThemeContext);
 
   const openUrl = useCallback(() => {
-    remote.shell.openExternal(url);
+    window.utils.openExternal(url);
   }, [url]);
 
   return (

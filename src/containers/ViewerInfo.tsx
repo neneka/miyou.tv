@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -96,11 +96,14 @@ const FileCard = memo(
             borderColor: theme.colors?.controlBorder
           }
         ]}
-        dividerStyle={{ backgroundColor: theme.colors?.controlBorder }}
-        titleStyle={[{ color: theme.colors?.control }]}
-        title="ファイル情報"
       >
         <>
+          <Card.Title style={[{ color: theme.colors?.control }]}>
+            ファイル情報
+          </Card.Title>
+          <Card.Divider
+            style={[{ backgroundColor: theme.colors?.controlBorder }]}
+          ></Card.Divider>
           <View style={[containerStyle.row, styles.cardRow]}>
             <View style={styles.cardLabel}>
               <Text style={[{ color: theme.colors?.control }]}>ID</Text>
@@ -242,11 +245,14 @@ const ProgramCard = memo(
             borderColor: theme.colors?.controlBorder
           }
         ]}
-        dividerStyle={{ backgroundColor: theme.colors?.controlBorder }}
-        titleStyle={[{ color: theme.colors?.control }]}
-        title="番組情報"
       >
         <>
+          <Card.Title style={[{ color: theme.colors?.control }]}>
+            番組情報
+          </Card.Title>
+          <Card.Divider
+            style={[{ backgroundColor: theme.colors?.controlBorder }]}
+          ></Card.Divider>
           <View style={[containerStyle.row, styles.cardRow]}>
             <View style={[containerStyle.row, styles.cardContent]}>
               <Text style={[textStyle.bold, { color: theme.colors?.control }]}>
@@ -413,11 +419,14 @@ const ExtraProgramCard = memo(
             borderColor: theme.colors?.controlBorder
           }
         ]}
-        dividerStyle={{ backgroundColor: theme.colors?.controlBorder }}
-        titleStyle={[{ color: theme.colors?.control }]}
-        title="録画情報"
       >
         <>
+          <Card.Title style={[{ color: theme.colors?.control }]}>
+            録画情報
+          </Card.Title>
+          <Card.Divider
+            style={[{ backgroundColor: theme.colors?.controlBorder }]}
+          ></Card.Divider>
           <View style={[containerStyle.row, styles.cardRow]}>
             <View style={styles.cardLabel}>
               <Text style={[{ color: theme.colors?.control }]}>ID</Text>

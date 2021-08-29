@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -467,7 +467,7 @@ export default class EPGStationService extends BackendService {
           name,
           filename: name,
           size,
-          uri: this.getAuthUrl(`/api/video/${id}?isDownload=true`)
+          uri: this.getAuthUrl(`/api/videos/${id}?isDownload=true`)
         })),
         authHeaders: this.getAuthHeaders()
       });
@@ -536,6 +536,7 @@ export default class EPGStationService extends BackendService {
   ) {
     const conf: AxiosRequestConfig = {
       url: this.getUrl(path),
+      headers: this.getAuthHeaders(),
       params: {},
       data: {},
       paramsSerializer: qs.stringify,

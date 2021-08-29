@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,7 +13,6 @@ limitations under the License.
 
 import { AnyAction } from "redux";
 import { all, takeLatest } from "redux-saga/effects";
-import { remote } from "electron";
 
 import {
   WINDOW_ALWAYSONTOP,
@@ -26,34 +25,28 @@ import {
 
 function setAlwaysOnTopSaga(action: AnyAction) {
   const { enabled = true } = action;
-  const win = remote.getCurrentWindow();
-  win.setAlwaysOnTop(enabled);
+  window.win.setAlwaysOnTop(enabled);
 }
 
 function setFullScreenSaga(action: AnyAction) {
   const { enabled = true } = action;
-  const win = remote.getCurrentWindow();
-  win.setFullScreen(enabled);
+  window.win.setFullScreen(enabled);
 }
 
 function maximizeSaga() {
-  const win = remote.getCurrentWindow();
-  win.maximize();
+  window.win.maximize();
 }
 
 function minimizeSaga() {
-  const win = remote.getCurrentWindow();
-  win.minimize();
+  window.win.minimize();
 }
 
 function restoreSaga() {
-  const win = remote.getCurrentWindow();
-  win.restore();
+  window.win.restore();
 }
 
 function closeSaga() {
-  const win = remote.getCurrentWindow();
-  win.close();
+  window.win.close();
 }
 
 export function* windowSaga() {

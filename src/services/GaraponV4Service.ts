@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -202,8 +202,10 @@ export default class GaraponV4Service extends BackendService {
       }
     );
 
-    const minTime = new Date(dates[0]).getTime();
-    const maxTime = new Date(dates[dates.length - 1]).getTime();
+    const minTime = new Date(`${dates[0]}T00:00+09:00`).getTime();
+    const maxTime = new Date(
+      `${dates[dates.length - 1]}T24:00+09:00`
+    ).getTime();
     let data: GaraponSiteSearchParams = {};
     data.sort = reverse ? "std" : "sta";
     data.num = view.toString();
@@ -275,23 +277,7 @@ export default class GaraponV4Service extends BackendService {
             start: new Date(starttime * 1000),
             end: new Date(endtime * 1000),
             preview: thumbnail_url,
-            stream: `${this.url}${m3u8_url}&gtvsession=${this.gtvsession}`,
-            download: [
-              {
-                name: "TS",
-                uri: `${this.url}/gapi/v4/Program/?${qs.stringify({
-                  gtvsession: this.gtvsession,
-                  action: "download_ts",
-                  starttime: starttime,
-                  endtime: endtime,
-                  tsid10: tsid10,
-                  service_type: service_type
-                })}`,
-                filename: `${moment(new Date(starttime * 1000)).format(
-                  "YYMMDD-HHmm"
-                )}-${bcname}-${series_title || title}.m2ts`
-              }
-            ]
+            stream: `${this.url}${m3u8_url}&gtvsession=${this.gtvsession}`
           })
         )
       };

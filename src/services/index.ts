@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import ChinachuService from "./ChinachuService";
 import GaraponService from "./GaraponService";
 import GaraponV4Service from "./GaraponV4Service";
 import EPGStationService from "./EPGStationService";
+import MirakcTimeshiftService from "./MirakcTimeshiftService";
 
 import { garaponDevId } from "../config/constants";
 
@@ -26,6 +27,9 @@ export async function initBackendService({ type, ...options }: any) {
     switch (type) {
       case "epgstation":
         backendService = new EPGStationService(options);
+        break;
+      case "mirakc":
+        backendService = new MirakcTimeshiftService(options);
         break;
       case "garapon":
         GaraponService.devId = garaponDevId || "";

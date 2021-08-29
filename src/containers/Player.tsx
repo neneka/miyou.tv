@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -69,8 +69,7 @@ const Player = () => {
     ({ setting }) => setting.backend?.mobileStreamType || "mp4"
   );
   const mobileStreamParams = useSelector<State, string>(
-    ({ setting }) =>
-      setting.backend?.mobileStreamParams || "b:v=1M&b:a=128k&s=1280x720"
+    ({ setting }) => setting.backend?.mobileStreamParams || ""
   );
   const mute = useSelector<State, boolean>(
     ({ setting }) => setting.player?.mute
@@ -124,16 +123,53 @@ const Player = () => {
   );
   const uri = useMemo(() => {
     let [uri, query] = recordedProgram.stream.split("?");
-    if (recordedProgram.type !== "file") {
-      if (
-        networkType.indexOf("cell") >= 0 &&
-        (type === "chinachu" || type === "epgstation")
-      ) {
-        uri = uri.replace(/[^.]+$/, mobileStreamType);
-        query = mobileStreamParams;
-      }
-      if (type === "chinachu") {
-        uri = uri.replace(/m2ts$/, "mp4");
+    if (recordedProgram.type !== "file" && networkType.indexOf("cell") >= 0) {
+      switch (type) {
+        case "chinachu": {
+          uri = uri.replace(/[^.]+$/, mobileStreamType);
+          query = mobileStreamParams;
+          break;
+        }
+        case "epgstation": {
+          const [, path, id] =
+            uri.match(/(\/api\/recorded\/([0-9]+)\/file)$/) ||
+            uri.match(/(\/api\/videos\/([0-9]+))$/) ||
+            [];
+          if (id) {
+            if (mobileStreamType !== "raw") {
+              uri = uri.replace(
+                /\/api\/.+$/,
+                `/api/streams/recorded/${id}/${mobileStreamType}`
+              );
+              query = qs.stringify({
+                mode: 0,
+                ss: 0,
+                ...qs.parse(query),
+                ...qs.parse(mobileStreamParams)
+              });
+            } else if (
+              recordedProgram.download?.find(
+                ({ uri }) => uri.indexOf(path) >= 0
+              )?.name === "TS"
+            ) {
+              uri = uri.replace(
+                /\/api\/.+$/,
+                `/api/streams/recorded/${id}/mp4`
+              );
+              query = "mode=0&ss=0";
+            }
+          } else {
+            uri = uri.replace(/[^/]+$/, mobileStreamType);
+            query = qs.stringify({
+              mode: 0,
+              ss: 0,
+              ...qs.parse(query),
+              ...qs.parse(mobileStreamParams)
+            });
+          }
+          break;
+        }
+        default:
       }
     }
     if (ss > 0) {
@@ -236,7 +272,7 @@ const Player = () => {
     if (reset) {
       setReset(false);
       if (time > 0) {
-        dispatch(PlayerActions.time(time));
+        preseek.current = time
       }
     }
   }, [reset]);
@@ -249,12 +285,36 @@ const Player = () => {
     }
   }, [initOptions]);
   useEffect(() => {
+    if (recordedProgram.type !== "file") {
+      switch (type) {
+        case "chinachu": {
+          let [baseUri, query] = uri.split("?");
+          seekable.current =
+            /[^.]\.m2ts+$/.test(baseUri) && query === "c:v=copy&c:a=copy";
+          break;
+        }
+        case "epgstation": {
+          let [baseUri, query] = uri.split("?");
+          seekable.current =
+            /\/api\/recorded\/[0-9]+\/file$/.test(baseUri) ||
+            /\/api\/videos\/[0-9]+$/.test(baseUri);
+          break;
+        }
+        case "mirakc": {
+          seekable.current = true;
+          break;
+        }
+        default:
+          seekable.current = false;
+      }
+    }
+  }, [uri, recordedProgram.type]);
+  useEffect(() => {
     if (seekTime != null) {
       if (seekable.current) {
-        if (Platform.OS === "ios" && vlcRef.current) {
+        if (vlcRef.current) {
           dispatch(PlayerActions.position(seekTime / duration));
         } else {
-          vlcRef.current?.seek(Math.floor(seekTime / 1000));
           videoRef.current?.seek(Math.floor(seekTime / 1000));
         }
       } else {
@@ -277,7 +337,7 @@ const Player = () => {
   }, [seekTime]);
   useEffect(() => {
     if (seekPosition != null) {
-      if (Platform.OS === "ios" && vlcRef.current && seekable.current) {
+      if (vlcRef.current && seekable.current) {
         vlcRef.current.seek(seekPosition);
       } else {
         dispatch(PlayerActions.time(seekPosition * duration));
@@ -310,7 +370,6 @@ const Player = () => {
         } else {
           const { duration } = recordedProgram;
           const time = currentTime + ss * 1000;
-          seekable.current = false;
           dispatch(
             PlayerActions.progress({
               duration,
@@ -414,6 +473,7 @@ const Player = () => {
   if (
     type === "chinachu" ||
     type === "epgstation" ||
+    type === "mirakc" ||
     recordedProgram.type === "file"
   ) {
     return (

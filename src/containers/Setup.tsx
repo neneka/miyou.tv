@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -188,8 +188,8 @@ const BackendSetup = memo(
             mobileStreamType = "mp4";
             mobileStreamParams = "b:v=1M&b:a=128k&s=1280x720";
           } else if (type === "epgstation") {
-            streamType = Platform.OS === "web" ? "raw" : "mp4";
-            streamParams = Platform.OS === "web" ? "" : "mode=0";
+            streamType = "raw";
+            streamParams = "";
             mobileStreamType = "mp4";
             mobileStreamParams = "mode=0";
           }
@@ -265,12 +265,16 @@ const BackendSetup = memo(
               if (streamType === "raw") {
                 onChanged({
                   streamType,
-                  streamParams: ""
+                  streamParams: "",
+                  mobileStreamType: "mp4",
+                  mobileStreamParams: "mode=0"
                 });
               } else {
                 onChanged({
                   streamType,
-                  streamParams: "mode=0"
+                  streamParams: "mode=0",
+                  mobileStreamType: "mp4",
+                  mobileStreamParams: "mode=0"
                 });
               }
               break;
@@ -387,7 +391,8 @@ const BackendSetup = memo(
             streamParams: qs.stringify(
               { ...qs.parse(streamParams), type },
               qsStringfyOptions
-            )
+            ),
+            mobileStreamType: "mp4"
           });
         }
       },
@@ -426,7 +431,7 @@ const BackendSetup = memo(
             case "epgstation":
               onChanged({
                 mobileStreamType,
-                mobileStreamParams: "mode=0"
+                mobileStreamParams: mobileStreamType === "raw" ? "" : "mode=0"
               });
               break;
             case "chinachu":
@@ -536,6 +541,7 @@ const BackendSetup = memo(
           items={[
             { label: "Chinachu", value: "chinachu" },
             { label: "EPGStation", value: "epgstation" },
+            { label: "mirakc(タイムシフト録画)", value: "mirakc" },
             ...(garaponDevId
               ? [
                   {
@@ -610,7 +616,7 @@ const BackendSetup = memo(
               color={theme.colors?.default}
               items={[
                 { label: "MPEG2-TS", value: "m2ts" },
-                { label: "MP4", value: "mp4" },
+                { label: "MP4", value: "mp4" }
               ]}
               selectedValue={streamType}
               onValueChange={streamTypeChange}
@@ -757,9 +763,7 @@ const BackendSetup = memo(
                   ]}
                   style={{ backgroundColor: theme.colors?.background }}
                   color={theme.colors?.default}
-                  items={[
-                    { label: "MP4", value: "mp4" },
-                  ]}
+                  items={[{ label: "MP4", value: "mp4" }]}
                   selectedValue={mobileStreamType}
                   onValueChange={mobileStreamTypeChange}
                 />
@@ -838,6 +842,15 @@ const BackendSetup = memo(
         )}
         {backendType === "epgstation" && (
           <>
+            <View style={styles.info}>
+              {Platform.OS === "ios" ? (
+                <Text>EPGStation v1/v2に対応しています。</Text>
+              ) : (
+                <LinkText url={epgstationInfoUrl}>
+                  EPGStation v1/v2に対応しています。
+                </LinkText>
+              )}
+            </View>
             <Input
               label="EPGStationのURL"
               inputContainerStyle={[styles.inputWrapper]}
@@ -914,9 +927,7 @@ const BackendSetup = memo(
               style={{ backgroundColor: theme.colors?.background }}
               color={theme.colors?.default}
               items={[
-                ...(Platform.OS === "web"
-                  ? [{ label: "直接再生", value: "raw" }]
-                  : []),
+                { label: "直接再生", value: "raw" },
                 { label: "MP4", value: "mp4" },
                 { label: "WebM", value: "webm" },
                 { label: "MPEG2-TS", value: "mpegts" }
@@ -947,6 +958,9 @@ const BackendSetup = memo(
                   style={{ backgroundColor: theme.colors?.background }}
                   color={theme.colors?.default}
                   items={[
+                    ...(videoType === "encoded" && streamType === "raw"
+                      ? [{ label: "直接再生", value: "raw" }]
+                      : []),
                     { label: "MP4", value: "mp4" },
                     { label: "WebM", value: "webm" }
                   ]}
@@ -959,6 +973,54 @@ const BackendSetup = memo(
                   autoCapitalize="none"
                   value={mobileStreamMode}
                   onChangeText={mobileStreamModeChange}
+                />
+              </>
+            )}
+          </>
+        )}
+        {backendType === "mirakc" && (
+          <>
+            <View style={styles.info}>
+              {Platform.OS === "ios" ? (
+                <Text>mirakcのタイムシフト録画に対応しています。</Text>
+              ) : (
+                <LinkText url={mirakcInfoUrl}>
+                  mirakcのタイムシフト録画に対応しています。
+                </LinkText>
+              )}
+            </View>
+            <Input
+              label="mirakcのURL"
+              inputContainerStyle={[styles.inputWrapper]}
+              autoCapitalize="none"
+              placeholder="http://127.0.0.1:40772/"
+              keyboardType="url"
+              textContentType="URL"
+              value={url}
+              onChangeText={urlChange}
+            />
+            <Text>ユーザー名とパスワードを使用する</Text>
+            <View style={containerStyle.row}>
+              <Switch value={auth} onValueChange={backendAuthChange} />
+            </View>
+            {auth && (
+              <>
+                <Input
+                  label="mirakcのユーザー"
+                  inputContainerStyle={[styles.inputWrapper]}
+                  autoCapitalize="none"
+                  textContentType="username"
+                  value={user}
+                  onChangeText={userChange}
+                />
+                <Input
+                  label="mirakcのパスワード"
+                  inputContainerStyle={[styles.inputWrapper]}
+                  autoCapitalize="none"
+                  textContentType="password"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={passwordChange}
                 />
               </>
             )}
@@ -1273,6 +1335,8 @@ const ViewSetup = memo(
 
 const moritapoEntryUrl = "https://find.moritapo.jp/moritapo/subscribe.php";
 const chinachuInfoUrl = "https://chinachu.moe/";
+const epgstationInfoUrl = "https://github.com/l3tnun/EPGStation";
+const mirakcInfoUrl = "https://github.com/mirakc/mirakc";
 
 const qsStringfyOptions: qs.IStringifyOptions = {
   encode: false,

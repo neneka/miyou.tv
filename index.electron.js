@@ -256,9 +256,8 @@ function createWindow() {
     minHeight: 480,
     frame: false,
     webPreferences: {
-      contextIsolation: false,
-      nodeIntegration: true,
-      enableRemoteModule: true
+      preload: path.join(__dirname, "dist/preload.js"),
+      contextIsolation: true
     }
   });
 
@@ -280,9 +279,8 @@ function createWindow() {
 
   const view = new BrowserView({
     webPreferences: {
-      contextIsolation: false,
-      nodeIntegration: true,
-      enableRemoteModule: true,
+      preload: path.join(__dirname, "dist/preload.js"),
+      contextIsolation: true,
       plugins: true
     }
   });
@@ -328,17 +326,12 @@ app.on("web-contents-created", (e, webContents) => {
 const path = require("path");
 process.mainModule.paths.push(path.join(app.getPath("exe"), "../node_modules"));
 
-try {
-  require("./bundle.js");
-} catch (e) {
-  require("./dist/bundle.js");
-}
+require("./dist/bundle.js");
 
 try {
   require("electron-reload")(
     [
       path.resolve(__filename),
-      path.resolve(__dirname, "bundle.js"),
       path.resolve(__dirname, "index.html"),
       path.resolve(__dirname, "dist/")
     ],

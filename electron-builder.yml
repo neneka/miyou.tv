@@ -1,6 +1,6 @@
 appId: "jp.razil.miyoutv"
 productName: "MiyouTV"
-copyright: "Copyright © 2016-2020 Brazil Ltd."
+copyright: "Copyright © 2016-2021 Brazil Ltd."
 directories:
   output: "./build/"
 files:
@@ -8,6 +8,7 @@ files:
   - "index.html"
   - "dist/main.js"
   - "dist/bundle.js"
+  - "dist/preload.js"
   - "assets/splash_screen.png"
   - "!node_modules/**/*"
 extraResources: ["mpv/**/*"]

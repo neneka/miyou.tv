@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -12,10 +12,8 @@ limitations under the License.
 */
 
 import { Store, AnyAction } from "redux";
-import { remote, ipcRenderer } from "electron";
 import Toast from "react-native-root-toast";
 import Mousetrap from "mousetrap";
-import fs from "fs";
 
 import { FileActions } from "../../modules/file";
 import { ServiceActions } from "../../modules/service";
@@ -39,79 +37,71 @@ export default function init(store: Store) {
     mode = "stack";
     boundsSettingName = "bounds";
     window.addEventListener("beforeunload", () => {
-      const win = remote.getCurrentWindow();
-      win.removeAllListeners();
-      const view = win.getBrowserView();
-      if (view) {
-        view.setBounds({ x: 0, y: 0, width: 0, height: 0 });
-        view.webContents.reload();
-      }
-
-      remote.BrowserWindow.getAllWindows()
-        .sort(({ id: a }, { id: b }) => a - b)
-        .slice(1)
-        .forEach(({ isDestroyed, close }) => {
-          !isDestroyed() && close();
-        });
+      window.win.closeAll();
     });
     Mousetrap.bind("mod+r", () => {
       store.dispatch(ServiceActions.backendInit());
       store.dispatch(ServiceActions.commentInit());
       return false;
     });
-    const { argv }: { argv: string[] } = remote.process;
-    const paths = argv.slice(1).filter(a => a !== "." && fs.existsSync(a));
-    if (paths.length > 0) {
-      store.dispatch(FileActions.add(paths.map(path => `file://${path}`)));
-    }
+
+    (async () => {
+      const argv = await window.utils.getArgv();
+      const paths = argv
+        .slice(1)
+        .filter(a => a !== "." && window.utils.fileExists(a));
+      if (paths.length > 0) {
+        store.dispatch(FileActions.add(paths.map(path => `file://${path}`)));
+      }
+    })();
     common(store);
   }
   store.dispatch(ViewerActions.init(mode));
 
-  const win = remote.getCurrentWindow();
-  const windowStateDispatcher = () => {
+  const windowStateDispatcher = async () => {
     store.dispatch(
       WindowActions.update({
-        alwaysOnTop: win.isAlwaysOnTop(),
-        fullScreen: win.isFullScreen(),
-        maximized: win.isMaximized(),
-        minimized: win.isMinimized()
+        alwaysOnTop: await window.win.isAlwaysOnTop(),
+        fullScreen: await window.win.isFullScreen(),
+        maximized: await window.win.isMaximized(),
+        minimized: await window.win.isMinimized()
       })
     );
   };
-  win
-    .on("maximize", windowStateDispatcher)
-    .on("unmaximize", windowStateDispatcher)
-    .on("minimize", windowStateDispatcher)
-    .on("restore", windowStateDispatcher)
-    .on("enter-full-screen", windowStateDispatcher)
-    .on("leave-full-screen", windowStateDispatcher)
-    .on("always-on-top-changed", windowStateDispatcher);
+  window.win.addStateListener(windowStateDispatcher);
   windowStateDispatcher();
 
   if (boundsSettingName) {
     const { setting } = store.getState();
     let boundsDispatcherId: number;
-    const windowBoundsDispatcher = () => {
+    const windowBoundsDispatcher = async () => {
       if (boundsDispatcherId != null) {
         clearTimeout(boundsDispatcherId);
       }
-      if (!win.isFullScreen() && !win.isMaximized()) {
+      if (
+        !(await window.win.isFullScreen()) &&
+        !(await window.win.isMaximized())
+      ) {
         boundsDispatcherId = setTimeout(
-          () =>
+          async () =>
             store.dispatch(
-              SettingActions.update(boundsSettingName, win.getBounds())
+              SettingActions.update(
+                boundsSettingName,
+                await window.win.getBounds()
+              )
             ),
           500
         );
       }
     };
-    win.on("resize", windowBoundsDispatcher).on("move", windowBoundsDispatcher);
+    window.win.addBoundsListener(windowBoundsDispatcher);
     const bounds = setting[boundsSettingName] || {};
-    win.setBounds({ ...win.getBounds(), ...bounds });
+    (async () => {
+      window.win.setBounds({ ...(await window.win.getBounds()), ...bounds });
+    })();
   }
 
-  ipcRenderer.on("dispatch", ({}, data: string) => {
+  window.ipc.addDispatchListener((data: string) => {
     const action = JSON.parse(data);
     store.dispatch(action);
   });
@@ -120,16 +110,14 @@ export default function init(store: Store) {
     dispatchWindow(WindowActions.setFullScreen(false));
   });
   Mousetrap.bind("mod+I", () => {
-    win.webContents.toggleDevTools();
+    window.utils.toggleDevTools();
     return false;
   });
 }
 
 function dispatchWindow(action: AnyAction) {
   try {
-    const win = remote.getCurrentWindow();
-    const data = JSON.stringify(action);
-    win.webContents.send("dispatch", data);
+    window.ipc.dispatchWindow(action);
   } catch (e) {
     Toast.show(e.message || JSON.stringify(e, null, 2), {
       ...toastOptions,

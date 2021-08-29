@@ -1,5 +1,5 @@
 /*!
-Copyright 2016-2020 Brazil Ltd.
+Copyright 2016-2021 Brazil Ltd.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -119,8 +119,7 @@ const ProgramTable = memo(() => {
     shallowEqual
   );
   const columns = useSelector<State, ProgramTableColumn[]>(
-    ({ program }) => program.table?.columns || [],
-    shallowEqual
+    ({ program }) => program.table?.columns || []
   );
   const maxDate = useSelector<State, Date | undefined>(
     ({ program }) => program.table?.maxDate
